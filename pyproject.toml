@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-warden"
+version = "0.1.0"
+description = "Policy-as-code security gateway for MCP: least-privilege tool policies, argument validation, PII/secret redaction, prompt-injection scanning, rug-pull pinning, lethal-trifecta flow control, approvals and a tamper-evident audit log."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Sushmit Gujar", email = "sushmit.gujar@gmail.com" }]
+keywords = ["mcp", "model-context-protocol", "ai-agents", "guardrails", "llm-security", "prompt-injection", "audit", "governance"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Security",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["numpy>=1.26", "pyyaml>=6"]
+
+[project.optional-dependencies]
+demo = ["mcp>=2.0"]
+eval = ["mcp>=2.0", "pyarrow>=15", "huggingface_hub>=0.23", "scipy>=1.11"]
+dev = ["mcp>=2.0", "scipy>=1.11", "pytest>=8", "ruff>=0.5", "mypy>=1.10", "types-PyYAML"]
+
+[project.scripts]
+mcp-warden = "mcp_warden.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/sushmit-gujar/mcp-warden"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_warden"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["B905", "SIM905"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

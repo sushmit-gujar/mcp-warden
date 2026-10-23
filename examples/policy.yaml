@@ -1,0 +1,67 @@
+# mcp-warden policy for the clinical-ops demo server.
+version: 1
+default: deny                      # least privilege: unknown tools are denied
+
+tools:
+  search_sops:
+    action: allow
+    args:
+      query: {required: true, max_length: 200,
+              deny_patterns: ["(?i)id_rsa|\\.ssh|/etc/passwd|BEGIN [A-Z ]*PRIVATE KEY"]}
+  read_document:
+    action: allow
+    untrusted_output: true         # documents are attacker-controllable content
+    args:
+      doc_id: {required: true, pattern: "[A-Z]{2,6}-?[0-9]{0,4}"}
+  read_record:
+    action: allow
+    private_data: true             # regulated data (PHI) -> taints the session
+    redact_output: true
+    rate_limit: {calls: 5, per_seconds: 60}
+    args:
+      patient_id: {required: true, pattern: "P-[0-9]{4}"}
+  send_email:
+    action: require_approval       # irreversible + egress
+    egress: true
+    args:
+      to: {required: true, pattern: "[^@\\s]+@example\\.com"}
+      subject: {max_length: 200}
+      body: {max_length: 5000}
+  post_to_ticket:
+    action: allow
+    egress: true                   # leaves the trust boundary
+    args:
+      ticket_id: {required: true, pattern: "TCK-[0-9]{1,6}"}
+      comment: {required: true, max_length: 2000}
+  run_sql:
+    action: allow
+    args:
+      query: {required: true, max_length: 2000,
+              deny_patterns: ["(?i)\\b(insert|update|delete|drop|alter|truncate|grant|create|copy)\\b",
+                              ";\\s*\\S"]}
+  read_file:
+    action: allow
+    args:
+      path: {required: true, allowed_prefixes: ["/shared/"], deny_patterns: ["\\.\\."]}
+
+output:
+  redact: [email, ssn, phone, credit_card, aws_key, github_token, private_key, jwt, openai_key]
+  redact_by_default: true
+  injection: {action: block, threshold: 0.6, detector: rules}  # one weak cue alone never blocks
+
+flow:
+  lethal_trifecta: require_approval   # private data + untrusted content + egress
+
+tool_definitions:
+  pin: true
+  on_change: block
+  scan_descriptions: true
+  lockfile: .warden/tools.lock.json
+
+audit:
+  path: .warden/audit.jsonl
+  hmac_key_env: WARDEN_AUDIT_KEY
+
+approvals:
+  path: .warden/approvals.jsonl
+  ttl_seconds: 600
