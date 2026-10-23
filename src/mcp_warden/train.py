@@ -35,7 +35,7 @@ def fit(texts: list[str], labels: list[int], dim: int = 2**15, epochs: int = 300
     sw = np.where(y == 1, pos_w, 1.0).astype(np.float32)
     sw /= sw.mean()
     m_w, v_w, m_b, v_b = np.zeros_like(w), np.zeros_like(w), 0.0, 0.0
-    for t in range(1, epochs + 1):  # full-batch Adam
+    for step in range(1, epochs + 1):  # full-batch Adam
         p = 1 / (1 + np.exp(-(x @ w + b)))
         g = (p - y) * sw / len(y)
         gw = xt @ g + l2 * w
@@ -44,8 +44,8 @@ def fit(texts: list[str], labels: list[int], dim: int = 2**15, epochs: int = 300
         v_w = 0.999 * v_w + 0.001 * gw**2
         m_b = 0.9 * m_b + 0.1 * gb
         v_b = 0.999 * v_b + 0.001 * gb**2
-        w -= lr * 0.01 * (m_w / (1 - 0.9**t)) / (np.sqrt(v_w / (1 - 0.999**t)) + 1e-8)
-        b -= lr * 0.01 * (m_b / (1 - 0.9**t)) / (np.sqrt(v_b / (1 - 0.999**t)) + 1e-8)
+        w -= lr * 0.01 * (m_w / (1 - 0.9**step)) / (np.sqrt(v_w / (1 - 0.999**step)) + 1e-8)
+        b -= lr * 0.01 * (m_b / (1 - 0.9**step)) / (np.sqrt(v_b / (1 - 0.999**step)) + 1e-8)
     return w, b
 
 
